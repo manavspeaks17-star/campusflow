@@ -64,9 +64,6 @@ export default function Home() {
       return;
     }
 
-    if (account.role !== "Student") {
-      window.location.href = rolePath(account.role);
-    }
   }, []);
 
   const visibleProducts = useMemo(
