@@ -119,7 +119,9 @@ export default function PartnerDashboard() {
     const current = readOrder();
     if (!current) return;
 
-    if (otpInput !== (current.otp ?? "4827")) {
+    if (!current.partnerAccepted) return;
+
+    if (otpInput.trim() !== (current.otp ?? "4827")) {
       setOtpError(true);
       return;
     }
@@ -129,6 +131,8 @@ export default function PartnerDashboard() {
     const updated = {
       ...current,
       status: "delivered" as OrderStatus,
+      partnerAccepted: true,
+      partnerName: current.partnerName ?? "Altamas Raza",
     };
 
     localStorage.setItem("campusflow_order", JSON.stringify(updated));
@@ -278,7 +282,10 @@ export default function PartnerDashboard() {
                         />
                         <button
                           onClick={verifyAndDeliver}
-                          disabled={order.status !== "picked_up"}
+                          disabled={
+                            !order.partnerAccepted ||
+                            !["ready", "picked_up"].includes(order.status)
+                          }
                           className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           Verify & deliver
