@@ -113,7 +113,6 @@ export default function Home() {
 
   function signOut() {
     clearDemoAccount();
-    localStorage.removeItem("campusflow_order");
     window.location.href = "/welcome";
   }
 
@@ -234,7 +233,6 @@ export default function Home() {
                 <button
                   onClick={() => {
                     clearDemoAccount();
-                    localStorage.removeItem("campusflow_order");
                     window.location.href = "/welcome";
                   }}
                   className="block w-full rounded-xl px-3 py-2.5 text-left text-sm hover:bg-zinc-50"
