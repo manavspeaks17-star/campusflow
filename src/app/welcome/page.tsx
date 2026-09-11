@@ -2,15 +2,11 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { getDemoAccount, rolePath } from "@/lib/demo-auth";
+
 
 export default function WelcomePage() {
   useEffect(() => {
-    const account = getDemoAccount();
-
-    if (account) {
-      window.location.href = rolePath(account.role);
-    }
+    // Welcome remains accessible so users can switch accounts.
   }, []);
 
   return (
@@ -60,7 +56,7 @@ export default function WelcomePage() {
                   href="/signup"
                   className="rounded-2xl bg-zinc-950 px-7 py-4 text-center text-sm font-semibold text-white transition hover:bg-zinc-700"
                 >
-                  Enter CampusFlow →
+                  Sign in to CampusFlow →
                 </Link>
 
                 <Link

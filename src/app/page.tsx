@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
-import { getDemoAccount, rolePath } from "@/lib/demo-auth";
+import { getDemoAccount, clearDemoAccount } from "@/lib/demo-auth";
 
 type Section = "Food" | "Essentials" | "Nearby Shops";
 type Role = "Customer" | "Merchant" | "Partner";
@@ -55,6 +55,7 @@ export default function Home() {
   const [otpError, setOtpError] = useState(false);
   const [search, setSearch] = useState("");
   const [orderMode, setOrderMode] = useState<"Now" | "Pre-order">("Now");
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     const account = getDemoAccount();
@@ -110,8 +111,28 @@ export default function Home() {
     return cart.find((item) => item.product.id === productId)?.quantity ?? 0;
   }
 
+  function signOut() {
+    clearDemoAccount();
+    localStorage.removeItem("campusflow_order");
+    window.location.href = "/welcome";
+  }
+
   function placeOrder() {
     if (!cart.length) return;
+
+    const order = {
+      id: 2048,
+      shop: cart[0].product.shop,
+      destination,
+      items: cart,
+      total,
+      status: "placed",
+      mode: orderMode,
+      createdAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem("campusflow_order", JSON.stringify(order));
+
     setOrderPlaced(true);
     setOrderStatus("placed");
     setMerchantStatus("New");
@@ -180,14 +201,55 @@ export default function Home() {
             <Link href="/about" className="rounded-full bg-zinc-900 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-700">About</Link>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <div className="text-xs font-medium">Manav</div>
-              <div className="text-[10px] text-zinc-400">Verified student</div>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-200 text-xs font-semibold">
-              M
-            </div>
+          <div className="relative">
+            <button
+              onClick={() => setProfileOpen((open) => !open)}
+              className="flex items-center gap-3 rounded-full px-2 py-1.5 hover:bg-white"
+            >
+              <div className="hidden text-right sm:block">
+                <div className="text-xs font-medium">Manav</div>
+                <div className="text-[10px] text-zinc-400">Verified student</div>
+              </div>
+
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-200 text-xs font-semibold">
+                M
+              </div>
+            </button>
+
+            {profileOpen && (
+              <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl">
+                <div className="border-b border-zinc-100 px-3 py-2">
+                  <div className="text-sm font-semibold">Manav</div>
+                  <div className="text-xs text-zinc-400">Verified student</div>
+                </div>
+
+                <Link
+                  href="/about"
+                  onClick={() => setProfileOpen(false)}
+                  className="mt-1 block rounded-xl px-3 py-2.5 text-sm hover:bg-zinc-50"
+                >
+                  View profile
+                </Link>
+
+                <button
+                  onClick={() => {
+                    clearDemoAccount();
+                    localStorage.removeItem("campusflow_order");
+                    window.location.href = "/welcome";
+                  }}
+                  className="block w-full rounded-xl px-3 py-2.5 text-left text-sm hover:bg-zinc-50"
+                >
+                  Switch account
+                </button>
+
+                <button
+                  onClick={signOut}
+                  className="block w-full rounded-xl px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -231,7 +293,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex flex-1 items-center rounded-2xl bg-white/10 px-4">
+              <div className="relative flex flex-1 items-center rounded-2xl bg-white/10 px-4">
                 <span className="mr-3">⌕</span>
                 <input
                   value={search}
@@ -239,6 +301,34 @@ export default function Home() {
                   placeholder="Search food, essentials, shops..."
                   className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-zinc-500"
                 />
+
+                {search.trim() && visibleProducts.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 text-zinc-900 shadow-xl">
+                    {visibleProducts.slice(0, 5).map((product) => (
+                      <button
+                        key={product.id}
+                        onClick={() => setSearch(product.name)}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left hover:bg-zinc-50"
+                      >
+                        <span className="text-xl">{product.emoji}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">
+                            {product.name}
+                          </span>
+                          <span className="block text-xs text-zinc-400">
+                            {product.shop} · ₹{product.price}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {search.trim() && visibleProducts.length === 0 && (
+                  <div className="absolute left-0 right-0 top-full z-40 mt-2 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-500 shadow-xl">
+                    No matching items found.
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -513,6 +603,23 @@ export default function Home() {
                   >
                     {orderMode === "Pre-order" ? "Pre-order · ready 1:15 PM" : "Place order"} · {destination}
                   </button>
+
+                  {orderPlaced && (
+                    <div className="mt-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-xs text-white">
+                          ✓
+                        </span>
+                        Order #2048 placed
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-zinc-500">
+                        {cart[0]?.product.shop} · Deliver to {destination}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-zinc-500">
+                        We’ll match your order with a student already heading your way.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
