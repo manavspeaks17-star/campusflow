@@ -44,7 +44,7 @@ const destinations = [
 export default function Home() {
   const [role, setRole] = useState<Role>("Customer");
   const [section, setSection] = useState<Section>("Food");
-  const [cart, setCart] = useState<Product[]>([]);
+  const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [destination, setDestination] = useState("Hostel 1");
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderStatus, setOrderStatus] = useState("placed");
@@ -65,12 +65,38 @@ export default function Home() {
     [section, search]
   );
 
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const partnerReward = cart.length ? 19.5 : 0;
   const platformRevenue = cart.length ? 10.5 : 0;
 
   function addToCart(product: Product) {
-    setCart((current) => [...current, product]);
+    setCart((current) => {
+      const existing = current.find((item) => item.product.id === product.id);
+      if (existing) {
+        return current.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...current, { product, quantity: 1 }];
+    });
+  }
+
+  function changeQuantity(productId: number, delta: number) {
+    setCart((current) =>
+      current
+        .map((item) =>
+          item.product.id === productId
+            ? { ...item, quantity: item.quantity + delta }
+            : item
+        )
+        .filter((item) => item.quantity > 0)
+    );
+  }
+
+  function getQuantity(productId: number) {
+    return cart.find((item) => item.product.id === productId)?.quantity ?? 0;
   }
 
   function placeOrder() {
@@ -125,12 +151,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-zinc-900">
-      <div className="fixed right-5 top-5 z-[60] flex items-center gap-1 rounded-full border border-zinc-200 bg-white/95 p-1.5 shadow-lg backdrop-blur">
-        <Link href="/about" className="rounded-full px-3 py-2 text-xs font-medium hover:bg-zinc-100">About</Link>
-        <Link href="/signup" className="rounded-full px-3 py-2 text-xs font-medium hover:bg-zinc-100">Account</Link>
-        <Link href="/merchant" className="rounded-full px-3 py-2 text-xs font-medium hover:bg-zinc-100">Merchant</Link>
-        <Link href="/partner" className="rounded-full px-3 py-2 text-xs font-medium hover:bg-zinc-100">Partner</Link>
-      </div>
       <header className="sticky top-0 z-50 border-b border-zinc-200/70 bg-[#f7f7f5]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-3">
@@ -387,12 +407,34 @@ export default function Home() {
                   <p className="mt-1 text-xs text-zinc-400">{product.category}</p>
                   <div className="mt-5 flex items-center justify-between">
                     <span className="text-lg font-semibold">₹{product.price}</span>
-                    <button
-                      onClick={() => addToCart(product)}
-                      className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-700"
-                    >
-                      Add
-                    </button>
+                    {getQuantity(product.id) === 0 ? (
+                      <button
+                        onClick={() => addToCart(product)}
+                        className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-700 active:scale-95"
+                      >
+                        Add
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1 rounded-full border border-zinc-900 bg-white px-1 py-1 text-zinc-900">
+                        <button
+                          onClick={() => changeQuantity(product.id, -1)}
+                          aria-label={`Decrease ${product.name}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold transition hover:bg-zinc-100 active:scale-90"
+                        >
+                          −
+                        </button>
+                        <span className="min-w-[24px] text-center text-xs font-semibold">
+                          {getQuantity(product.id)}
+                        </span>
+                        <button
+                          onClick={() => changeQuantity(product.id, 1)}
+                          aria-label={`Increase ${product.name}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold transition hover:bg-zinc-100 active:scale-90"
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </article>
@@ -407,12 +449,12 @@ export default function Home() {
                     Your order
                   </div>
                   <h3 className="mt-1 text-2xl font-semibold">
-                    {cart.length} item{cart.length > 1 ? "s" : ""}
+                    {cart.reduce((sum, item) => sum + item.quantity, 0)} item{cart.reduce((sum, item) => sum + item.quantity, 0) > 1 ? "s" : ""}
                   </h3>
                   <div className="mt-3 space-y-1">
-                    {cart.map((item, i) => (
-                      <div key={`${item.id}-${i}`} className="text-sm text-zinc-500">
-                        {item.name} · ₹{item.price}
+                    {cart.map((item) => (
+                      <div key={item.product.id} className="text-sm text-zinc-500">
+                        {item.product.name} · {item.quantity} × ₹{item.product.price}
                       </div>
                     ))}
                   </div>

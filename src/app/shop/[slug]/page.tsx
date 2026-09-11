@@ -9,13 +9,29 @@ const slugify = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, "-").repla
 export default function ShopPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const shop = shops.find(s => slugify(s.name) === slug);
-  const [cart, setCart] = useState<string[]>([]);
+  const [cart, setCart] = useState<{ item: string; quantity: number }[]>([]);
   const [placed, setPlaced] = useState(false);
 
   if (!shop) return <main className="min-h-screen bg-[#f7f7f5] p-10"><Link href="/unimall" className="text-sm">← Back to UniMall</Link><h1 className="mt-10 text-3xl font-semibold">Shop not found</h1></main>;
 
   const prices = useMemo(() => Object.fromEntries(shop.items.map((item, i) => [item, 49 + i * 30 + (shop.name.length % 5) * 5])), [shop]);
-  const total = cart.reduce((sum, item) => sum + (prices[item] as number), 0);
+  function getQuantity(item: string) {
+    return cart.find((entry) => entry.item === item)?.quantity ?? 0;
+  }
+
+  function changeQuantity(item: string, delta: number) {
+    setCart((current) =>
+      current
+        .map((entry) =>
+          entry.item === item
+            ? { ...entry, quantity: entry.quantity + delta }
+            : entry
+        )
+        .filter((entry) => entry.quantity > 0)
+    );
+  }
+
+  const total = cart.reduce((sum, entry) => sum + (prices[entry.item] as number) * entry.quantity, 0);
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-zinc-900">
@@ -40,19 +56,55 @@ export default function ShopPage({ params }: { params: Promise<{ slug: string }>
             <div className="mb-4"><p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Shop menu</p><h2 className="mt-1 text-2xl font-semibold">Browse items</h2><p className="mt-1 text-xs text-zinc-400">Items are predicted from this shop's service type and uploaded offering description.</p></div>
             <div className="grid gap-4 sm:grid-cols-2">
               {shop.items.map(item => (
-                <button key={item} onClick={() => setCart(c => [...c, item])} className="group rounded-3xl border border-zinc-200 bg-white p-5 text-left transition hover:-translate-y-1 hover:shadow-lg">
+                <div key={item} className="group rounded-3xl border border-zinc-200 bg-white p-5 text-left transition hover:-translate-y-1 hover:shadow-lg">
                   <div className="flex h-16 items-center justify-center rounded-2xl bg-zinc-100 text-3xl">{["🛍️","📦","✨","🎯"][shop.items.indexOf(item)%4]}</div>
-                  <div className="mt-4 flex items-center justify-between"><h3 className="font-semibold">{item}</h3><span className="text-sm font-semibold">₹{prices[item] as number}</span></div>
-                  <p className="mt-1 text-xs text-zinc-400">Tap to add</p>
-                </button>
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <h3 className="font-semibold">{item}</h3>
+                    <span className="shrink-0 text-sm font-semibold">₹{prices[item] as number}</span>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <p className="text-xs text-zinc-400">{getQuantity(item) ? `${getQuantity(item)} in order` : "Tap to add"}</p>
+                    {getQuantity(item) === 0 ? (
+                      <button
+                        onClick={() => setCart(c => {
+                          const existing = c.find(x => x.item === item);
+                          return existing
+                            ? c.map(x => x.item === item ? { ...x, quantity: x.quantity + 1 } : x)
+                            : [...c, { item, quantity: 1 }];
+                        })}
+                        className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-700 active:scale-95"
+                      >
+                        Add
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1 rounded-full border border-zinc-900 bg-white px-1 py-1 text-zinc-900">
+                        <button
+                          onClick={() => changeQuantity(item, -1)}
+                          aria-label={`Decrease ${item}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold transition hover:bg-zinc-100 active:scale-90"
+                        >
+                          −
+                        </button>
+                        <span className="min-w-[24px] text-center text-xs font-semibold">{getQuantity(item)}</span>
+                        <button
+                          onClick={() => changeQuantity(item, 1)}
+                          aria-label={`Increase ${item}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold transition hover:bg-zinc-100 active:scale-90"
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           </section>
 
           <aside className="h-fit rounded-3xl border border-zinc-200 bg-white p-6 md:sticky md:top-24">
             <div className="text-xs uppercase tracking-[0.18em] text-zinc-400">Your order</div>
-            <h3 className="mt-2 text-xl font-semibold">{cart.length} item{cart.length === 1 ? "" : "s"}</h3>
-            <div className="mt-4 space-y-2">{cart.length ? cart.map((item,i) => <div key={i} className="flex justify-between text-sm"><span className="text-zinc-500">{item}</span><span>₹{prices[item] as number}</span></div>) : <p className="text-sm text-zinc-400">Add an item from this shop.</p>}</div>
+            <h3 className="mt-2 text-xl font-semibold">{cart.reduce((sum, entry) => sum + entry.quantity, 0)} item{cart.reduce((sum, entry) => sum + entry.quantity, 0) === 1 ? "" : "s"}</h3>
+            <div className="mt-4 space-y-2">{cart.length ? cart.map((entry) => <div key={entry.item} className="flex justify-between text-sm"><span className="text-zinc-500">{entry.item} × {entry.quantity}</span><span>₹{(prices[entry.item] as number) * entry.quantity}</span></div>) : <p className="text-sm text-zinc-400">Add an item from this shop.</p>}</div>
             <div className="mt-5 border-t border-zinc-100 pt-4 flex justify-between font-semibold"><span>Total</span><span>₹{total}</span></div>
             <button disabled={!cart.length} onClick={() => setPlaced(true)} className="mt-4 w-full rounded-2xl bg-zinc-900 py-3.5 text-sm font-semibold text-white disabled:bg-zinc-200 disabled:text-zinc-400">Place shop order</button>
             {placed && <div className="mt-4 rounded-2xl bg-emerald-50 p-4 text-xs text-emerald-800"><b>Order placed.</b><br/>{shop.name} has received your order for preparation.</div>}
