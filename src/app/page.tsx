@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
+import { getDemoAccount, rolePath } from "@/lib/demo-auth";
 
 type Section = "Food" | "Essentials" | "Nearby Shops";
 type Role = "Customer" | "Merchant" | "Partner";
@@ -42,7 +43,7 @@ const destinations = [
 ];
 
 export default function Home() {
-  const [role, setRole] = useState<Role>("Customer");
+  const [role] = useState<Role>("Customer");
   const [section, setSection] = useState<Section>("Food");
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [destination, setDestination] = useState("Hostel 1");
@@ -54,6 +55,19 @@ export default function Home() {
   const [otpError, setOtpError] = useState(false);
   const [search, setSearch] = useState("");
   const [orderMode, setOrderMode] = useState<"Now" | "Pre-order">("Now");
+
+  useEffect(() => {
+    const account = getDemoAccount();
+
+    if (!account) {
+      window.location.href = "/welcome";
+      return;
+    }
+
+    if (account.role !== "Student") {
+      window.location.href = rolePath(account.role);
+    }
+  }, []);
 
   const visibleProducts = useMemo(
     () =>
@@ -161,28 +175,12 @@ export default function Home() {
             </div>
           </Link>
 
-          <div className="hidden items-center gap-2 rounded-full border border-zinc-200 bg-white p-1 md:flex">
-            {(["Customer", "Merchant", "Partner"] as Role[]).map((item) => (
-              <button
-                key={item}
-                onClick={() => setRole(item)}
-                className={`rounded-full px-4 py-2 text-xs font-medium transition ${
-                  role === item
-                    ? "bg-zinc-900 text-white"
-                    : "text-zinc-500 hover:text-zinc-900"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
           <nav className="hidden items-center gap-1 lg:flex">
             <Link href="/" className="rounded-full px-3 py-2 text-xs font-medium text-zinc-500 hover:bg-white hover:text-zinc-900">Home</Link>
             <Link href="/food" className="rounded-full px-3 py-2 text-xs font-medium text-zinc-500 hover:bg-white hover:text-zinc-900">Food</Link>
             <Link href="/essentials" className="rounded-full px-3 py-2 text-xs font-medium text-zinc-500 hover:bg-white hover:text-zinc-900">Essentials</Link>
             <Link href="/unimall" className="rounded-full px-3 py-2 text-xs font-medium text-zinc-500 hover:bg-white hover:text-zinc-900">UniMall</Link>
-            <Link href="/signup" className="rounded-full bg-zinc-900 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-700">Sign up</Link>
+            <Link href="/about" className="rounded-full bg-zinc-900 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-700">About</Link>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -728,19 +726,6 @@ export default function Home() {
         CampusFlow · CODE FLUX 2026 · Prototype
       </footer>
 
-      <div className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border border-zinc-200 bg-white p-1 shadow-2xl md:hidden">
-        {(["Customer", "Merchant", "Partner"] as Role[]).map((item) => (
-          <button
-            key={item}
-            onClick={() => setRole(item)}
-            className={`rounded-full px-3 py-2 text-[10px] font-medium ${
-              role === item ? "bg-zinc-900 text-white" : "text-zinc-500"
-            }`}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
     </main>
   );
 }

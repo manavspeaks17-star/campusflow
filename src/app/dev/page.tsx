@@ -1,6 +1,36 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getDemoAccount } from "@/lib/demo-auth";
 
 export default function DevPage() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const account = getDemoAccount();
+
+    if (!account) {
+      window.location.href = "/welcome";
+      return;
+    }
+
+    if (account.role !== "Developer") {
+      window.location.href =
+        account.role === "Student"
+          ? "/"
+          : account.role === "Merchant"
+          ? "/merchant"
+          : "/partner";
+      return;
+    }
+
+    setReady(true);
+  }, []);
+
+  if (!ready) {
+    return <main className="min-h-screen bg-zinc-50" />;
+  }
   return (
     <main className="min-h-screen bg-zinc-50 text-zinc-950">
       <div className="mx-auto max-w-7xl px-6 py-8">
