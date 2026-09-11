@@ -311,6 +311,44 @@ export default function PartnerDashboard() {
           </div>
         </section>
 
+        <section className="mt-8 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                Partner verification
+              </p>
+              <h2 className="mt-2 text-xl font-semibold">
+                Verified delivery partner
+              </h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Identity and delivery handoffs are verified before a journey is completed.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white">
+                ✓
+              </span>
+              Verified
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-zinc-50 p-4">
+              <div className="text-xs text-zinc-400">Identity</div>
+              <div className="mt-1 text-sm font-semibold">LPU student</div>
+            </div>
+            <div className="rounded-2xl bg-zinc-50 p-4">
+              <div className="text-xs text-zinc-400">Reliability</div>
+              <div className="mt-1 text-sm font-semibold">98% on time</div>
+            </div>
+            <div className="rounded-2xl bg-zinc-50 p-4">
+              <div className="text-xs text-zinc-400">Handoff</div>
+              <div className="mt-1 text-sm font-semibold">OTP protected</div>
+            </div>
+          </div>
+        </section>
+
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold">Reliability</h2>

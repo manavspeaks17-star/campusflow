@@ -57,6 +57,14 @@ export default function Home() {
   const [orderMode, setOrderMode] = useState<"Now" | "Pre-order">("Now");
   const [profileOpen, setProfileOpen] = useState(false);
 
+  const destinationMinutes: Record<string, number> = {
+    "Hostel 1": 8,
+    "Hostel 4": 10,
+    "Block 34": 7,
+    "Uni Mall": 6,
+    "Central Library": 5,
+  };
+
   useEffect(() => {
     const account = getDemoAccount();
 
@@ -80,6 +88,15 @@ export default function Home() {
   const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const partnerReward = cart.length ? 19.5 : 0;
   const platformRevenue = cart.length ? 10.5 : 0;
+
+  const maxPrepTime = cart.length
+    ? Math.max(...cart.map((item) => item.product.prep))
+    : 0;
+
+  const campusTravelTime = destinationMinutes[destination] ?? 8;
+
+  const estimatedDeliveryMinutes =
+    maxPrepTime > 0 ? maxPrepTime + campusTravelTime : 0;
 
   function addToCart(product: Product) {
     setCart((current) => {
@@ -433,6 +450,44 @@ export default function Home() {
                       ⚡ Skip the queue · Ready by 1:15 PM
                     </div>
                   )}
+
+                  <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                          Campus availability
+                        </div>
+                        <div className="mt-1 text-sm font-semibold">
+                          Ready-to-order
+                        </div>
+                        <div className="mt-1 text-xs text-zinc-500">
+                          Your selected item is available from a verified campus merchant.
+                        </div>
+                      </div>
+                      <div className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                        In stock
+                      </div>
+                    </div>
+                  </div>
+
+                  {estimatedDeliveryMinutes > 0 && orderStatus !== "delivered" && (
+                    <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                            Smart campus ETA
+                          </div>
+                          <div className="mt-1 text-lg font-semibold">
+                            ~{estimatedDeliveryMinutes} min
+                          </div>
+                          <div className="mt-1 text-xs text-zinc-500">
+                            {maxPrepTime} min prep + ~{campusTravelTime} min campus journey
+                          </div>
+                        </div>
+                        <div className="text-2xl">🛵</div>
+                      </div>
+                    </div>
+                  )}
                   {orderStatus !== "delivered" && (
                     <div className="mt-4 inline-flex items-center gap-3 rounded-xl bg-white px-4 py-2 ring-1 ring-emerald-200">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
@@ -464,6 +519,109 @@ export default function Home() {
                     )
                   )}
                 </div>
+              </div>
+            </section>
+          )}
+
+          {orderPlaced && (
+            <section className="mb-8 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Live journey
+                  </div>
+                  <h2 className="mt-2 text-xl font-semibold">
+                    Your CampusFlow delivery
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Order #2048 · {destination}
+                  </p>
+                </div>
+
+                <div className="rounded-full bg-zinc-950 px-4 py-2 text-xs font-semibold text-white">
+                  {statusLabel[orderStatus]}
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-4">
+                {[
+                  ["placed", "Ordered"],
+                  ["preparing", "Preparing"],
+                  ["partner_matched", "Partner"],
+                  ["delivered", "Delivered"],
+                ].map(([status, label], index) => {
+                  const currentIndex = [
+                    "placed",
+                    "preparing",
+                    "partner_matched",
+                    "delivered",
+                  ].indexOf(orderStatus);
+
+                  return (
+                    <div
+                      key={status}
+                      className={`rounded-2xl p-4 ${
+                        currentIndex >= index
+                          ? "bg-zinc-950 text-white"
+                          : "bg-zinc-100 text-zinc-400"
+                      }`}
+                    >
+                      <div className="text-xs font-semibold">{index + 1}</div>
+                      <div className="mt-2 text-sm font-semibold">{label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 rounded-2xl bg-zinc-50 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-semibold">
+                      Campus route match
+                    </div>
+                    <div className="mt-1 text-xs text-zinc-500">
+                      3 students are already travelling toward {destination}.
+                    </div>
+                  </div>
+                  <div className="text-2xl">🛵</div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {orderPlaced && (
+            <section className="mb-8 rounded-3xl border border-zinc-200 bg-zinc-950 p-6 text-white">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    Smart reorder
+                  </div>
+                  <h2 className="mt-2 text-xl font-semibold">
+                    Need it again?
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Reorder your previous campus purchase in one click.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const raw = localStorage.getItem("campusflow_order");
+                    if (!raw) return;
+
+                    try {
+                      const previous = JSON.parse(raw);
+                      if (previous.items) {
+                        setCart(previous.items);
+                        setOrderPlaced(false);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    } catch {}
+                  }}
+                  className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-zinc-100"
+                >
+                  Order again
+                </button>
               </div>
             </section>
           )}
